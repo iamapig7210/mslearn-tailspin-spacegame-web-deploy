@@ -91,10 +91,33 @@ stages:
               appName: '$(WebAppNameDev)'
               package: '$(Pipeline.Workspace)/drop/$(buildConfiguration)/*.zip'
 - stage: 'Staging'
+
   displayName: 'Deploy to the staging environment'
   dependsOn: Dev
   jobs:
+  - job: 'Deployment_approval'
+    pool: server
+    steps:
+      - task: ServiceNow-DevOps-Server-Change-Acceleration@1
+        inputs:
+          connectedServiceName: 'DevOps Connection'
+          changeRequestDetails: |
+            {
+                            "attributes": {
+                              "requested_by": {
+                                "name": "DevOps User"
+                              },
+                              "assignment_group": {
+                                "name": "Change Management"
+                              },
+                              "priority": "2",
+                              "comments": "This is a sample pipeline script to be added in your change step",
+                              "work_notes": "Update this to work_notes"
+                            }
+                          }
   - deployment: Deploy
+    dependsOn: Deployment_approval
+    condition: succeeded()
     pool:
       vmImage: 'ubuntu-20.04'
     environment: staging
